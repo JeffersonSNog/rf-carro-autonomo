@@ -1,9 +1,6 @@
 # Carro Autônomo
 
-Completo: Yes
-Tags: Aprendizado por Reforço
-
-Neste exercício-programa, o agente é um carrinho que precisa aprender a **pilotar uma pista 2D** usando **aprendizado por reforço tabular**. Você implementará dois algoritmos clássicos — **Q-Learning** e **SARSA** — e os comparará em diferentes cenários, explorando como cada um se comporta sob diferentes regimes de exploração, discretização e dificuldade de pista.
+Neste exercício-programa, o agente é um carrinho que precisa aprender a **pilotar uma pista 2D** usando **aprendizado por reforço tabular**. Você implementará o **Q-Learning** e o analisará em pistas de dificuldade crescente, observando como o agente aprende a coordenar velocidade e direção a partir apenas de sensores tipo LIDAR.
 
 A continuidade com o EP anterior (busca informada com A*) é proposital: lá, o agente conhecia o ambiente e planejava a rota; aqui, o ambiente é desconhecido e o agente precisa aprender por interação. Mesmo domínio (grid 2D), formato similar de I/O, mas paradigma fundamentalmente diferente.
 
@@ -29,11 +26,10 @@ Exemplo de pista (formato `entrada.txt`):
 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱 🧱
 ```
 
-> O EP fornece um conjunto de **18 pistas** (`pista_01.txt` a `pista_18.txt`) com dificuldades crescentes:
-- **01–02:** retas simples, ideais para depurar a implementação.
-- **03–08:** curvas suaves e variações moderadas — boas para os experimentos principais.
-- **09–10:** mais complexas, inéditas (use conforme as tarefas pedem).
-- **11–18:** complexas com várias mudanças de direção — zigzags densos, U-turns, formato cobra, escadas diagonais. Para experimentos opcionais ou para investigar limites do tabular.
+> O EP fornece um conjunto de **18 pistas** (`pista_01.txt` a `pista_18.txt`) organizadas em três níveis de dificuldade (ver `descricao_pistas.md` para o design detalhado de cada uma):
+- **01–04 (fáceis):** progressão pedagógica — cada pista introduz uma habilidade nova que o Q-Learning precisa aprender (reagir a parede frontal, generalizar curvas, ajuste fino de ângulo, U-turn com chicane). Corredor 3–4 células. Boas para depurar e para o baseline da T4.1.
+- **05–12 (médias):** combinam vários elementos (chicanes, curvas em sequência, mudanças de direção). Corredor 3–4 células. A `pista_07.txt` é usada na T4.2.
+- **13–18 (difíceis):** corredor pode chegar a 2 células, com várias mudanças de direção. Para experimentos opcionais ou para investigar limites do tabular.
 > 
 > 
 > Você pode também criar pistas adicionais para exploração.
@@ -83,32 +79,29 @@ onde:
 
 Ou seja: **estado é um vetor de 6 floats em $[0, 1]$**.
 
-### 2.1 Discretização (a peça central deste EP)
+### 2.1 Discretização
 
-Como Q-Learning e SARSA tabulares precisam de uma **tabela $Q[s, a]$** indexada por estados discretos, você precisa **converter o vetor de 6 floats em uma chave discreta**.
+Como o Q-Learning tabular precisa de uma **tabela $Q[s, a]$** indexada por estados discretos, você precisa **converter o vetor de 6 floats em uma chave discreta**.
 
-Estratégia básica: dividir cada componente em $K$ baldes de tamanho igual.
-
-Exemplo com $K = 5$ baldes:
+**Estratégia adotada neste EP:** divida cada componente em $K = 5$ baldes de tamanho igual em $[0, 1]$:
 
 ```python
 def discretize(obs, n_bins=5):
     # obs ∈ [0, 1]^6
-    indices = tuple(min(int(v * n_bins), n_bins - 1) for v in obs)
-    return indices  # tupla de 6 ints, cada um em {0, 1, ..., n_bins-1}
+    return tuple(min(int(v * n_bins), n_bins - 1) for v in obs)
 ```
 
-Com $K = 5$ baldes e 6 dimensões, há até $5^6 = 15.625$ estados possíveis. Com 5 ações, são até $78.125$ entradas na tabela $Q$ — manejável.
+O resultado é uma tupla de 6 inteiros em $\{0, 1, 2, 3, 4\}$, que serve como chave da tabela $Q$ (use um `dict[chave, np.ndarray(5)]` ou um `np.ndarray` 7-dimensional).
 
-Mas a escolha de $K$ é um trade-off central:
+**Por que $K = 5$ é uma boa escolha para este problema?**
 
-| $K$ pequeno (ex.: 3) | $K$ grande (ex.: 10) |
-| --- | --- |
-| Poucos estados → aprende rápido | Muitos estados → aprende devagar |
-| Estados muito agregados → política grosseira | Estados muito específicos → política precisa |
-| Generalização forte (estados parecidos viram o mesmo) | Generalização fraca (estados parecidos viram diferentes) |
+1. **Casa com a granularidade da velocidade.** O carro tem $V_{\max} = 2{,}0$ e incrementos de $0{,}5$, então $v$ assume apenas 5 valores distintos: $\{0;\ 0{,}5;\ 1{,}0;\ 1{,}5;\ 2{,}0\}$. Normalizada, vira $\{0;\ 0{,}25;\ 0{,}5;\ 0{,}75;\ 1{,}0\}$ — exatamente 5 baldes, sem agregar nem fragmentar valores físicos.
+2. **Resolução suficiente para os sensores LIDAR.** Com $K = 5$, cada balde cobre 20% do alcance máximo (2 células de 10). É grossa o bastante para o agente aprender em poucos episódios, e fina o bastante para distinguir “colado na parede” (balde 0) de “com folga” (baldes 1+).
+3. **Tamanho de tabela manejável.** Com 6 dimensões, há até $5^6 = 15{.}625$ estados; com 5 ações, são $78{.}125$ entradas na tabela $Q$. Treinamento de 30.000 episódios popula uma fração disso e converge rapidamente.
 
-> Você deve **experimentar pelo menos 2 valores diferentes de $K$** e reportar o impacto. Veja seção 6.1 do relatório.
+> Discretizações mais finas (ex.: $K = 8$ ou $K = 10$) explodem o número de estados ($8^6 \approx 262$ mil; $10^6 = 1$ milhão) e tornam o aprendizado muito mais lento sem ganho prático aqui, porque a velocidade só tem 5 níveis e o LIDAR já é amostrado em passos de $0{,}1$ célula no *ray casting*. Discretizações mais grosseiras ($K = 3$) agregam demais — o agente não consegue separar “perto da parede” de “colado na parede” e colide com frequência.
+> 
+> Por essas razões, neste EP **$K = 5$ é fixo** e o foco do trabalho está no **Q-Learning** e no seu comportamento em pistas de dificuldade crescente (Tarefas 4.1 e 4.2).
 > 
 
 ## 3. Recompensas
@@ -131,6 +124,8 @@ Recompensa total por passo: $r = r_\text{progresso} + r_\text{tempo}$ (mais um d
 ### 4.1 Q-Learning Baseline
 
 Implemente Q-Learning com $\varepsilon$-greedy. Treine na pista `pista_03.txt` (curva moderada).
+
+> Veja **`docs/qlearning.md`** para a matemática do algoritmo (atualização TD, $\varepsilon$-greedy, por que é off-policy), pseudocódigo e dicas de implementação em Python.
 
 Hiperparâmetros sugeridos como ponto de partida:
 
@@ -155,43 +150,22 @@ Recompensa total: 478.4
 Sucesso: SIM
 ```
 
-### 4.2 Estudo da Discretização (obrigatório)
+### 4.2 Q-Learning em pista com risco (Cliff-style)
 
-Repita o treinamento de **Q-Learning** com 2 valores adicionais de $K$:
+Essa tarefa é o coração pedagógico do EP — investiga como o Q-Learning se comporta em uma pista onde **errar custa caro**, evocando a essência do experimento *Cliff Walking* do Sutton & Barto.
 
-- $K = 3$ (grosseira)
-- $K = 8$ (fina)
+Use a pista `pista_07.txt` (curva apertada — alto risco de colisão durante exploração).
 
-Junto com o $K = 5$ do baseline (T4.1), você terá 3 pontos para comparar.
+Treine o Q-Learning com a **mesma configuração** da T4.1 ($\alpha=0{,}1$, $\gamma=0{,}99$, $\varepsilon$ decaindo de 1,0 a 0,05 em 80% de 30.000 episódios, $K=5$).
 
-Para cada $K$, reporte:
+Analise e reporte:
 
-- Tamanho da tabela $Q$ ao final do treinamento (número de entradas efetivamente populadas).
-- Histórico de aprendizado (recompensa média por episódio, janela móvel de 100) — salve como lista/array nos dados do `pickle` do modelo. O relatório pode mostrar isso como tabela com marcos (ep. 1.000, 5.000, 10.000, 20.000, 30.000) ou ASCII art simples.
-- Tempo de chegada da política final.
-- Sucesso da política final.
+- **Histórico de aprendizado** (recompensa média por episódio em janela móvel de 100, salvo no pickle e reportado no relatório como tabela com marcos ou ASCII). Compare com o histórico da T4.1 — a curva é mais ruidosa? Demora mais para estabilizar?
+- **Recompensa média durante o treinamento** (com $\varepsilon$-greedy ativo) vs. **recompensa final em avaliação gulosa** ($\varepsilon = 0$). A diferença é maior do que na T4.1? Por quê?
+- **Velocidade média** da política aprendida. O agente fica mais conservador (devagar) ou mais agressivo do que na T4.1?
+- **Trajetória visual** — use a animação no terminal (`renderizar_episodio` em `src/visualize.py`) para inspecionar a política final. O agente passa colado nas paredes ou mantém folga? Descreva o que observou (capturar o terminal em texto ou descrever em prosa basta).
 
-Gere `discretizacao.txt` com um bloco por valor de $K$. Discuta o trade-off — qual $K$ aprende mais rápido? Qual chega à melhor política final? Por quê?
-
-### 4.3 Comparação Q-Learning vs. SARSA em pista com risco (Cliff-style)
-
-Essa tarefa é o coração pedagógico do EP — reproduz a essência do experimento *Cliff Walking* do Sutton & Barto, mas no domínio do carrinho. **Aqui você implementa SARSA pela primeira vez.**
-
-> Lembre-se da diferença chave entre os dois algoritmos: o alvo TD do **SARSA** usa $Q(s', a')$ onde $a'$ é amostrado da política $\varepsilon$-greedy, **não** $\max_{a'}$ como no Q-Learning. Por isso SARSA é **on-policy** (a política sendo melhorada é a mesma usada para coletar dados) e Q-Learning é **off-policy**.
-
-Use a pista `pista_07.txt` (pista com curva apertada — alto risco de colisão durante exploração).
-
-Treine ambos os algoritmos com **a mesma configuração** ($\alpha=0{,}1$, $\gamma=0{,}99$, $\varepsilon$ decaindo de 1,0 a 0,05 em 80% de 30.000 episódios, $K=5$).
-
-Compare:
-
-- **Histórico de aprendizado** dos dois algoritmos lado a lado (recompensa média por episódio em janela móvel de 100, salvo no pickle e reportado no relatório como tabela com marcos ou ASCII).
-- **Recompensa média durante o treinamento** (com $\varepsilon$greedy ativo). Qual algoritmo “sofre menos” durante o aprendizado?
-- **Recompensa final em avaliação gulosa** ($\varepsilon = 0$, após o treinamento). Qual algoritmo termina com a melhor política?
-- **Velocidade média** da política aprendida. Qual é mais “agressivo”?
-- **Trajetória visual** — use a animação no terminal de `visualize.py` (`renderizar_episodio`) para inspecionar a política final de cada algoritmo. As trajetórias passam por lugares diferentes? Mais perto/longe das paredes? Descreva o que observou no relatório (capturar o terminal em texto ou descrever em prosa basta).
-
-Gere `comparativo.txt` com um bloco para Q-Learning e outro para SARSA. Discuta no relatório se os resultados batem com a teoria que você viu em aula sobre on-policy vs. off-policy.
+Gere `cliff.txt` com o resumo da política treinada. Discuta no relatório como o **trade-off entre exploração e explotação** muda quando colidir tem custo alto, e como isso aparece no comportamento aprendido (velocidade, distância das paredes, taxa de colisão durante o treinamento).
 
 
 ## 5. Saída do Programa
@@ -199,8 +173,7 @@ Gere `comparativo.txt` com um bloco para Q-Learning e outro para SARSA. Discuta 
 O programa deve gerar, para cada experimento, um arquivo de saída listando o desempenho final:
 
 - **`q_learning.txt`:** resultado da T4.1 (Q-Learning baseline) em `pista_03.txt`.
-- **`discretizacao.txt`:** resultados da T4.2 (3 valores de K: 3, 5, 8) em `pista_03.txt`.
-- **`comparativo.txt`:** resultados da T4.3 (Q-Learning vs SARSA) em `pista_07.txt`.
+- **`cliff.txt`:** resultado da T4.2 (Q-Learning em pista de risco) em `pista_07.txt`.
 
 Formato sugerido para cada arquivo:
 
@@ -220,24 +193,17 @@ Sucesso: SIM
 
 ### 1. Modelagem do MDP e Q-Learning Baseline (T4.1)
 
-- **Espaço de estados (após discretização):** quantos estados, em teoria? E na prática (após o treinamento)?
+- **Espaço de estados (após discretização $K = 5$):** quantos estados, em teoria? E na prática (após o treinamento)?
 - **Espaço de ações:** justifique se 5 ações são suficientes.
 - **Função de recompensa:** explique como você implementou o reward shaping.
 - **Como você está armazenando $Q[s,a]$ internamente** (dicionário, array NumPy multidimensional)?
-- **Estratégia de discretização** que você adotou.
 - **Resultado do baseline:** quantos passos o Q-Learning leva para completar a pista? Velocidade média atingida? Perfil de uso de cada ação?
 
-### 2. Estudo da Discretização (T4.2)
+### 2. Q-Learning em pista de risco — Cliff-style (T4.2)
 
-- Tabela comparativa para os 3 valores de $K$ (3, 5, 8).
-- Discussão do trade-off observado.
-- Qual $K$ você recomenda? Por quê?
-
-### 3. Comparação Q-Learning vs. SARSA com risco — Cliff-style (T4.3)
-
-- O experimento confirma a teoria sobre on-policy vs. off-policy? Qual algoritmo sofre menos durante exploração? Qual termina com política melhor?
-- Velocidade média de cada política — qual é mais "agressivo"?
-- Discuta com base nas trajetórias observadas via animação no terminal (`renderizar_episodio` em `src/visualize.py`) — as políticas finais são qualitativamente diferentes? Por quê?
+- Como o desempenho do Q-Learning muda em uma pista com alto risco de colisão? Compare curva de aprendizado, recompensa final e velocidade média com os resultados da T4.1.
+- A diferença entre a recompensa durante o treinamento (com $\varepsilon$-greedy) e a recompensa em avaliação gulosa ($\varepsilon = 0$) é maior aqui? Como isso reflete o efeito de **explorar perto de paredes**?
+- Discuta com base nas trajetórias observadas via animação no terminal (`renderizar_episodio` em `src/visualize.py`) — o agente passa colado nas paredes ou mantém folga? Como isso se relaciona com o comportamento off-policy do Q-Learning (que aprende a política gulosa enquanto explora aleatoriamente)?
 
 ---
 
@@ -245,7 +211,7 @@ Sucesso: SIM
 
 - **Linguagem:** Python 3.10+.
 - **Bibliotecas permitidas:** `numpy`, `tqdm`. A visualização do agente é via animação no terminal (`src/visualize.py`), sem dependências de imagem.
-- **Bibliotecas proibidas:** `gymnasium`, `stable-baselines3`, `ray[rllib]`, `tianshou`, `torch` (não precisa para tabular), ou qualquer biblioteca de RL pronta. **Você deve implementar Q-Learning e SARSA do zero**, incluindo o código de discretização.
+- **Bibliotecas proibidas:** `gymnasium`, `stable-baselines3`, `ray[rllib]`, `tianshou`, `torch` (não precisa para tabular), ou qualquer biblioteca de RL pronta. **Você deve implementar o Q-Learning do zero**, incluindo a função de discretização.
 - O ambiente do carro vem fornecido no starter code (`src/env.py`). Você não precisa reimplementá-lo.
 
 ---
@@ -258,7 +224,7 @@ Deverá ser entregue o **repositório no GitHub**. Deverá ser implementado usan
 
 Não é obrigatório, mas preferencialmente usar Python. A correção do professor considera que o algoritmo deve rodar em sua máquina local, portanto, deverá ter as instruções de como rodar e dependências no `README.md`.
 
-**Não será permitido o uso de bibliotecas de software de Inteligência Artificial pronta** (`gymnasium`, `stable-baselines3`, `ray[rllib]`, `tianshou`, etc.). Você deve implementar Q-Learning e SARSA **do zero**. Você pode usar `numpy` e `tqdm` (já listados em `requirements.txt`).
+**Não será permitido o uso de bibliotecas de software de Inteligência Artificial pronta** (`gymnasium`, `stable-baselines3`, `ray[rllib]`, `tianshou`, etc.). Você deve implementar o Q-Learning **do zero**. Você pode usar `numpy` e `tqdm` (já listados em `requirements.txt`).
 
 Pode ser baseado no starter code fornecido em https://github.com/senac-ia/rf-carro-autonomo que contém:
 
@@ -281,11 +247,8 @@ seu-projeto/
 ├── src/
 ├── pistas/
 └── treinamento/
-    ├── q_learning_K5_pista_03.pkl  ← baseline Q-Learning da T4.1 (reusado por T4.2 como K=5)
-    ├── q_learning_K3_pista_03.pkl  ← T4.2 (discretização grosseira)
-    ├── q_learning_K8_pista_03.pkl  ← T4.2 (discretização fina)
-    ├── q_learning_K5_pista_07.pkl  ← T4.3 (Cliff-style)
-    └── sarsa_K5_pista_07.pkl       ← T4.3 (Cliff-style)
+    ├── q_learning_K5_pista_03.pkl  ← baseline Q-Learning (T4.1)
+    └── q_learning_K5_pista_07.pkl  ← Q-Learning em pista de risco (T4.2)
 ```
 
 Esses arquivos devem ser **commitados no repositório**. Isso permite ao professor reproduzir as avaliações sem re-treinar.
@@ -295,8 +258,8 @@ Esses arquivos devem ser **commitados no repositório**. Isso permite ao profess
 ### Explicar a modelagem em apresentação
 
 - **Representação do espaço de estados:**
-    - Como você discretizou o vetor de 6 floats? Quantos baldes por dimensão?
-    - Qual o tamanho real da tabela $Q$ ao final do treinamento? Outros valores melhoram ou pioram?
+    - Como você implementou a discretização do vetor de 6 floats com $K = 5$?
+    - Qual o tamanho real da tabela $Q$ ao final do treinamento? Como esse número se compara ao máximo teórico de $5^6 \times 5 = 78{.}125$ entradas?
 - **Espaço de ações:** como as 5 ações foram codificadas?
 - **Função de recompensa:** como o reward shaping foi implementado? Você experimentou variações?
 - **Política de exploração:** schedule de $\varepsilon$, justificativa.
@@ -306,21 +269,21 @@ Esses arquivos devem ser **commitados no repositório**. Isso permite ao profess
 
 ### Em código
 
-- **Implementação dos dois algoritmos** (Q-Learning, SARSA) do zero.
-- **Função de discretização** (ponto crítico do EP).
+- **Implementação do Q-Learning** do zero.
+- **Função de discretização** com $K = 5$ (fornecida como ponto de partida no enunciado).
 - **Loop de treinamento** que registra histórico de recompensas por episódio (salvo no pickle do modelo).
 - **Loop de avaliação** com $\varepsilon = 0$ que gera os arquivos de saída descritos na seção 5.
-- **Inspeção da política final** via animação no terminal (`renderizar_episodio` em `src/visualize.py`) — descreva no relatório o que observou para pelo menos um agente por algoritmo.
+- **Inspeção da política final** via animação no terminal (`renderizar_episodio` em `src/visualize.py`) — descreva no relatório o que observou para a política treinada em cada pista.
 - **Salvamento e carregamento** dos modelos via pickle no diretório `/treinamento`.
 
 ### Critérios de avaliação
 
 - Explicação da lógica do problema e da modelagem do MDP.
-- Explicação de como você pensou a discretização.
+- Explicação da discretização adotada (por que $K = 5$ funciona bem aqui).
 - Explicação das funções principais e estrutura do código.
 - Demonstração dos resultados (histórico de aprendizado em formato textual, animação do agente no terminal, tabelas de avaliação).
-- **Análise crítica** — especialmente do trade-off da discretização e do contraste Q-Learning vs SARSA.
-- Criatividade — extensões além do mínimo, exploração de variações na discretização ou na função de recompensa.
+- **Análise crítica** — especialmente do comportamento do Q-Learning na pista Cliff-style (efeito do risco sobre exploração e política aprendida).
+- Criatividade — extensões além do mínimo, exploração de variações na função de recompensa ou em outras pistas.
 
 ### Política de uso de ferramentas
 
@@ -434,7 +397,7 @@ config = dados["config"]
 
 Pronto. Não há mais nada de fundamental.
 
-### B.3 O que salvar para Q-Learning e SARSA
+### B.3 O que salvar para o Q-Learning
 
 Salve um dicionário com tudo que você precisa para reproduzir o agente:
 
@@ -485,7 +448,6 @@ def treinar_ou_carregar(nome, treinar_fn, recarregar=False):
 # Uso:
 q_baseline = treinar_ou_carregar("q_learning_K5_pista_03", lambda: treinar_q_learning(env, K=5))
 q_cliff = treinar_ou_carregar("q_learning_K5_pista_07", lambda: treinar_q_learning(env_07, K=5))
-sarsa_cliff = treinar_ou_carregar("sarsa_K5_pista_07", lambda: treinar_sarsa(env_07, K=5))
 ```
 
 Para forçar re-treinamento (útil ao depurar), passe `recarregar=True` ou simplesmente delete o arquivo `.pkl`.
@@ -595,4 +557,4 @@ O agente precisa **coordenar** velocidade e virada para fazer curvas que caibam 
     - Se o carro **anda na velocidade máxima sempre e bate**: o problema é aprender a frear.
     - Se o carro **anda devagar sempre e nunca bate mas demora muito**: o problema é aprender a acelerar nas retas.
     - Se o carro **acelera nas retas e freia antes das curvas**: parabéns, está bem treinado.
-4. **No relatório:** vale comparar a **velocidade média** atingida pelo agente em cada pista. É um indicador de quão “agressiva” é a política aprendida — análogo ao contraste Q-Learning vs. SARSA do Cliff Walking discutido em aula.
+4. **No relatório:** vale comparar a **velocidade média** atingida pelo agente em cada pista. É um indicador de quão “agressiva” é a política aprendida — em pistas com risco (T4.2), você deve observar uma política mais conservadora, que privilegia segurança sobre velocidade.

@@ -1,32 +1,30 @@
 # EP Carrinho — Starter Code
 
-Este pacote contém a infraestrutura básica para o EP do carrinho de corrida com Aprendizado por Reforço Tabular. Ele cobre as partes "chatas" da implementação (parser de pistas, ambiente do carro com física, ray casting, visualização) para que você possa focar no que interessa: **implementar Q-Learning e SARSA**.
+Este pacote contém a infraestrutura básica para o EP do carrinho de corrida com Aprendizado por Reforço Tabular. Ele cobre as partes "chatas" da implementação (parser de pistas, ambiente do carro com física, ray casting, visualização) para que você possa focar no que interessa: **implementar o Q-Learning**.
 
 ## Estrutura do pacote
 
 ```
 carrinho/
 ├── README.md                ← este arquivo
-├── solucao.py               ← esqueleto a ser preenchido com Q-Learning e SARSA
+├── solucao.py               ← esqueleto a ser preenchido com Q-Learning
 ├── src/
 │   ├── track.py             ← parser de pistas em emojis
 │   ├── env.py               ← ambiente AmbienteCarro (física + LIDAR + recompensas)
 │   └── visualize.py         ← geração de GIF/MP4 do agente correndo
 ├── pistas/
-│   ├── pista_01.txt … pista_04.txt   ← 4 pistas básicas (retas e curvas simples)
-│   ├── pista_05.txt … pista_08.txt   ← 4 pistas com curvas suaves moderadas
-│   ├── pista_09.txt … pista_14.txt   ← 6 pistas complexas (zigzags, U-turns, mudanças de direção)
-│   └── pista_15.txt … pista_18.txt   ← 4 pistas extra-grandes (cobra longa, escada diagonal, espiral, mega-cobra)
+│   ├── pista_01.txt … pista_04.txt   ← 4 pistas FÁCEIS (progressão pedagógica)
+│   ├── pista_05.txt … pista_12.txt   ← 8 pistas MÉDIAS (combinam vários elementos)
+│   └── pista_13.txt … pista_18.txt   ← 6 pistas DIFÍCEIS (corredor até 2 células)
 └── tests/
     └── validar_pistas.py    ← valida que todas as pistas têm caminho largada → chegada
 ```
 
-As pistas estão organizadas por dificuldade crescente:
+As pistas estão organizadas em três níveis de dificuldade (ver `descricao_pistas.md` para o design detalhado):
 
-- **01–04:** retas e curvas simples, ideais para depurar a implementação.
-- **05–08:** curvas suaves e variações moderadas — boas para os experimentos principais.
-- **09–14:** **complexas com várias mudanças de direção** — zigzags densos, U-turns, formato cobra, escadas diagonais. Para experimentos opcionais ou para investigar limites do tabular.
-- **15–18:** **extra-grandes** — pistas muito maiores e com caminhos longos (cobra de 5 corredores, escada diagonal, espiral em 1.5 voltas, mega-cobra de 6 corredores). Para discussão crítica no relatório sobre limites do tabular.
+- **01–04 (fáceis):** progressão pedagógica — cada uma introduz uma habilidade nova (reagir a parede frontal, generalizar curvas, ajuste fino de ângulo, U-turn com chicane). Corredor 3–4 células.
+- **05–12 (médias):** combinam vários elementos (chicanes, curvas em sequência, mudanças de direção). Corredor 3–4 células. A `pista_07.txt` é a usada na T4.2 (Cliff-style).
+- **13–18 (difíceis):** corredor pode chegar a 2 células, com várias mudanças de direção. Para experimentos opcionais ou discussão de limites do tabular no relatório.
 
 ## Setup
 
@@ -34,7 +32,7 @@ As pistas estão organizadas por dificuldade crescente:
 pip install -r requirements.txt
 ```
 
-**Bibliotecas proibidas:** `gymnasium`, `stable-baselines3`, `ray[rllib]`, `tianshou`, `torch`, ou qualquer biblioteca de RL pronta. Q-Learning e SARSA devem ser implementados **do zero**, incluindo o código de discretização. Veja §7 do enunciado.
+**Bibliotecas proibidas:** `gymnasium`, `stable-baselines3`, `ray[rllib]`, `tianshou`, `torch`, ou qualquer biblioteca de RL pronta. O Q-Learning deve ser implementado **do zero**, incluindo a função de discretização. Veja §7 do enunciado.
 
 ## Verificando o starter code
 
@@ -125,7 +123,7 @@ while not done:
 
 ### 1. Estado é baixo-dimensional, mas **contínuo**
 
-O estado é um vetor de 6 floats normalizados em [0, 1] (5 sensores LIDAR + velocidade). Para **Q-Learning e SARSA tabulares**, você precisa **discretizar** esse vetor antes de usar como chave da tabela. A estratégia de discretização afeta muito o desempenho — documente sua escolha no relatório.
+O estado é um vetor de 6 floats normalizados em [0, 1] (5 sensores LIDAR + velocidade). Para o **Q-Learning tabular**, você precisa **discretizar** esse vetor antes de usar como chave da tabela. O enunciado fixa $K = 5$ baldes por dimensão; o §2.1 explica por que essa escolha funciona bem para este problema.
 
 > 💡 **Velocidade é o componente sutil.** Os 5 sensores LIDAR refletem o estado atual; já a velocidade tem efeito acumulativo (acelerar agora afeta todos os passos seguintes) e cria o clássico problema de *temporal credit assignment* — o agente precisa aprender a frear ANTES de uma curva, sacrificando recompensa imediata. Leia o **Anexo C** (`docs/enunciado.md`) para a discussão completa.
 
@@ -157,20 +155,22 @@ O carro é representado por uma seta direcional (➡️ ⬇️ ⬅️ ⬆️ etc
 
 Para você ter referência sobre o que esperar:
 
-- **Pista 01–02 (retas):** Q-Learning tabular converge rápido (poucos milhares de episódios).
-- **Pista 03 (curva suave):** o baseline do enunciado — pode precisar **20.000–30.000 episódios** com K=5 para uma boa política.
-- **Pistas 09–14 (complexas):** podem ser difíceis para tabular — vários U-turns, zigzags, mudanças de direção.
-- **Pistas 15–18 (extra-grandes):** podem ser impossíveis para tabular — esperado pedagogicamente. Use para discussão crítica no relatório.
+- **Pistas 01–04 (fáceis):** Q-Learning tabular converge rápido (poucos milhares de episódios).
+- **Pista 03 (curva suave):** o baseline do enunciado — pode precisar **20.000–30.000 episódios** com $K=5$ para uma boa política.
+- **Pista 07 (curva apertada):** a usada na T4.2 (Cliff-style) — alto risco de colisão durante exploração.
+- **Pistas 05–12 (médias):** combinam mais elementos, exigem políticas mais sofisticadas.
+- **Pistas 13–18 (difíceis):** corredor mínimo de 2 células com várias mudanças de direção — podem ser muito difíceis ou impossíveis para tabular. Use para discussão crítica no relatório.
 
 A calibração final dos hiperparâmetros é parte do EP — você vai precisar experimentar.
 
 ## Tarefas a implementar
 
-O EP é dividido em três tarefas (detalhes em `docs/enunciado.md`, §4):
+Antes de começar, leia **`docs/qlearning.md`** — explica a matemática do Q-Learning (atualização TD, $\varepsilon$-greedy, por que é off-policy), traz o pseudocódigo e dicas de implementação em Python com a estrutura de dados sugerida para a tabela $Q$.
 
-- **T4.1 — Q-Learning Baseline** em `pista_03.txt` com K=5. Treine, avalie com ε=0 e gere `q_learning.txt`.
-- **T4.2 — Estudo da Discretização (obrigatório):** repita Q-Learning com K=3 e K=8 (reutilize o K=5 da T4.1) e compare os três pontos. Gere `discretizacao.txt`.
-- **T4.3 — Cliff-style (Q vs SARSA com risco)** em `pista_07.txt`. Aqui você implementa SARSA pela primeira vez. Compare histórico de aprendizado, recompensa final, velocidade média e trajetória. Gere `comparativo.txt`.
+O EP é dividido em duas tarefas (detalhes em `docs/enunciado.md`, §4):
+
+- **T4.1 — Q-Learning Baseline** em `pista_03.txt` com $K=5$. Treine, avalie com $\varepsilon=0$ e gere `q_learning.txt`.
+- **T4.2 — Q-Learning em pista de risco (Cliff-style)** em `pista_07.txt`. Treine com a mesma configuração da T4.1 e analise como o agente se comporta quando colidir custa caro: curva de aprendizado, velocidade média da política final, distância das paredes nas trajetórias. Gere `cliff.txt`.
 
 ### Hiperparâmetros padrão (baseline do enunciado)
 
@@ -183,7 +183,7 @@ O EP é dividido em três tarefas (detalhes em `docs/enunciado.md`, §4):
 | Desconto $\gamma$ | 0,99 |
 | Exploração $\varepsilon$ | decai linearmente de 1,0 a 0,05 nos primeiros 80% dos episódios |
 
-Use estes valores como ponto de partida. A T4.2 pede explicitamente variar $K \in \{3, 8\}$; em outras tarefas, justifique no relatório qualquer desvio.
+Use estes valores como ponto de partida. $K = 5$ é **fixo** neste EP (ver §2.1 do enunciado para a justificativa); justifique no relatório qualquer desvio nos demais hiperparâmetros.
 
 ### Formato dos arquivos de saída
 
@@ -201,7 +201,7 @@ Recompensa total: 478.4
 Sucesso: SIM
 ```
 
-Para tarefas com múltiplas variantes (T4.2 com três $K$, T4.3 com dois algoritmos), concatene blocos no mesmo arquivo, um por variante.
+Cada arquivo é independente — um para a T4.1 e outro para a T4.2.
 
 ## Salvamento de modelos
 
@@ -211,14 +211,11 @@ Estrutura esperada do diretório:
 
 ```
 treinamento/
-├── q_learning_K5_pista_03.pkl   ← T4.1 baseline (reusado por T4.2 como K=5)
-├── q_learning_K3_pista_03.pkl   ← T4.2 (discretização grosseira)
-├── q_learning_K8_pista_03.pkl   ← T4.2 (discretização fina)
-├── q_learning_K5_pista_07.pkl   ← T4.3 (Cliff-style)
-└── sarsa_K5_pista_07.pkl        ← T4.3 (Cliff-style)
+├── q_learning_K5_pista_03.pkl   ← T4.1 baseline
+└── q_learning_K5_pista_07.pkl   ← T4.2 Cliff-style
 ```
 
-Cada `.pkl` deve guardar pelo menos: tabela Q, K usado, nº de episódios, hiperparâmetros, seed, pista usada e histórico de recompensas (em janela móvel de 100). Esses arquivos devem ser commitados no repositório — assim o professor reproduz as avaliações sem re-treinar.
+Cada `.pkl` deve guardar pelo menos: tabela Q, $K$ usado, nº de episódios, hiperparâmetros, seed, pista usada e histórico de recompensas (em janela móvel de 100). Esses arquivos devem ser commitados no repositório — assim o professor reproduz as avaliações sem re-treinar.
 
 Detalhes no **Anexo B do enunciado** (`docs/enunciado.md`).
 
@@ -235,15 +232,14 @@ Mudar esses valores muda o problema. Justifique no relatório.
 
 ## Esqueleto da sua implementação
 
-Veja `solucao.py` — ele tem placeholders para os dois algoritmos (`AgenteQLearning`, `AgenteSARSA`) e a função `main()` que orquestra a I/O esperada pelo enunciado.
+Veja `solucao.py` — ele tem o placeholder do agente (`AgenteQLearning`) e a função `main()` que orquestra a I/O esperada pelo enunciado.
 
 ## Relatório
 
-O relatório deve cobrir três seções (detalhes em `docs/enunciado.md`, §6):
+O relatório deve cobrir duas seções (detalhes em `docs/enunciado.md`, §6):
 
-1. **Modelagem do MDP e Q-Learning Baseline (T4.1)** — espaço de estados após discretização, ações, recompensa, estrutura de armazenamento de $Q[s,a]$, e os resultados do baseline (passos até completar, velocidade média, perfil de uso de cada ação).
-2. **Estudo da Discretização (T4.2)** — comparativo entre os três valores de $K$ (3, 5, 8), trade-off observado, qual $K$ você recomenda e por quê.
-3. **Cliff-style: Q-Learning vs. SARSA (T4.3)** — qual algoritmo sofre menos durante exploração, qual termina com melhor política, velocidade média de cada, diferenças qualitativas nas trajetórias observadas via animação no terminal.
+1. **Modelagem do MDP e Q-Learning Baseline (T4.1)** — espaço de estados após a discretização ($K = 5$), ações, recompensa, estrutura de armazenamento de $Q[s,a]$, e os resultados do baseline (passos até completar, velocidade média, perfil de uso de cada ação).
+2. **Q-Learning em pista de risco — Cliff-style (T4.2)** — como o comportamento do Q-Learning muda quando colidir custa caro: curva de aprendizado vs. T4.1, recompensa durante treinamento vs. avaliação gulosa, velocidade média, e diferenças qualitativas nas trajetórias observadas via animação no terminal.
 
 ## Dúvidas
 

@@ -3,10 +3,9 @@ Esqueleto da sua solução para o EP do carrinho (versão tabular).
 
 Você deve implementar:
     - AgenteQLearning  (tabular)
-    - AgenteSARSA      (tabular)
 
 E preencher main() para orquestrar treinamento, avaliação e geração dos arquivos
-de saída descritos no enunciado (q_learning.txt, discretizacao.txt, comparativo.txt).
+de saída descritos no enunciado (q_learning.txt para T4.1 e cliff.txt para T4.2).
 
 Uso:
     python solucao.py pistas/pista_03.txt
@@ -84,30 +83,7 @@ class AgenteQLearning:
 
 
 # ============================================================================
-# SARSA TABULAR
-# ============================================================================
-
-class AgenteSARSA:
-    """
-    TODO: implementar SARSA tabular.
-
-    Diferença em relação ao Q-Learning:
-    - Use Q(s', a') no alvo, onde a' é amostrada da política ε-greedy atual,
-      NÃO max_{a'} Q(s', a').
-    - Isso muda o loop principal: a ação a' precisa ser escolhida ANTES do
-      update, e usada no próximo passo do loop.
-    """
-
-    def __init__(self, obs_dim, n_actions, K=5, alpha=0.1, gamma=0.99,
-                 eps_inicial=1.0, eps_final=0.05):
-        # TODO
-        raise NotImplementedError
-
-    # Mesma interface que AgenteQLearning: discretizar, escolher_acao, atualizar.
-
-
-# ============================================================================
-# LOOP DE TREINAMENTO (genérico — funciona para os dois algoritmos)
+# LOOP DE TREINAMENTO
 # ============================================================================
 
 def treinar(env, agente, n_episodios, decaimento_eps_episodios, verbose=True):
@@ -201,9 +177,7 @@ def main():
     parser.add_argument("pista", help="Caminho para arquivo de pista (treino principal)")
     parser.add_argument("--episodios", type=int, default=30_000)
     parser.add_argument("--max-passos", type=int, default=500)
-    parser.add_argument("--K", type=int, default=5, help="Baldes da discretização")
-    parser.add_argument("--so", choices=["q", "s", "todos"], default="todos",
-                        help="Quais algoritmos rodar")
+    parser.add_argument("--K", type=int, default=5, help="Baldes da discretização (fixo em 5 no enunciado)")
     args = parser.parse_args()
 
     print(f"Carregando pista: {args.pista}")
@@ -211,28 +185,17 @@ def main():
     print(f"  obs_dim = {env.obs_dim}, n_actions = {env.n_actions}")
 
     # ─── Q-Learning Tabular ────────────────────────────────────────────────
-    if args.so in ("q", "todos"):
-        print("\n=== Q-Learning Tabular ===")
-        # agente = AgenteQLearning(env.obs_dim, env.n_actions, K=args.K)
-        # rewards, sucessos = treinar(env, agente, args.episodios,
-        #                             decaimento_eps_episodios=int(0.8 * args.episodios))
-        # resultado = avaliar(env, agente)
-        # escrever_saida("q_learning.txt", "Q-Learning", env, resultado,
-        #                args.episodios, args.K)
-        pass
-
-    # ─── SARSA Tabular ─────────────────────────────────────────────────────
-    if args.so in ("s", "todos"):
-        print("\n=== SARSA Tabular ===")
-        # agente = AgenteSARSA(env.obs_dim, env.n_actions, K=args.K)
-        # ...
-        pass
+    print("\n=== Q-Learning Tabular ===")
+    # agente = AgenteQLearning(env.obs_dim, env.n_actions, K=args.K)
+    # rewards, sucessos = treinar(env, agente, args.episodios,
+    #                             decaimento_eps_episodios=int(0.8 * args.episodios))
+    # resultado = avaliar(env, agente)
+    # escrever_saida("q_learning.txt", "Q-Learning", env, resultado,
+    #                args.episodios, args.K)
 
     # ─── Outras tarefas ────────────────────────────────────────────────────
-    # T4.2: Estudo da Discretização — repita Q-Learning com K=3 e K=8 (K=5 já feito acima)
-    # T4.3: Cliff-style (Q-Learning vs SARSA) — use pista_07.txt
-    #
-    # Veja docs/enunciado.md para detalhes de cada tarefa.
+    # T4.2 (Cliff-style): retreine o Q-Learning em pista_07.txt com a mesma
+    # configuração e gere cliff.txt. Veja docs/enunciado.md §4.2 para detalhes.
 
     print("\nPronto.")
 
