@@ -47,7 +47,7 @@ A cada passo, a posição é atualizada por: $x \leftarrow x + v \cos\theta$, $y
 
 A célula atual do grid é dada por arredondamento de $(x, y)$. Se essa célula é parede, considera-se **colisão** (recompensa fortemente negativa, episódio termina).
 
-> Veja o **Anexo C** para uma discussão detalhada sobre velocidade — é o componente mais sutil do problema.
+> Veja [`docs/anexo_c_velocidade.md`](anexo_c_velocidade.md) para uma discussão detalhada sobre velocidade — é o componente mais sutil do problema.
 > 
 
 ### 1.3 Ações
@@ -66,7 +66,7 @@ Sugestão: $V_{\max} = 2{,}0$ (em células por passo).
 
 ## 2. Representação do Estado e Discretização
 
-A representação observável é um vetor baixo-dimensional baseado em **sensores tipo LIDAR** (ver Anexo A):
+A representação observável é um vetor baixo-dimensional baseado em **sensores tipo LIDAR** (ver [`docs/anexo_a_lidar.md`](anexo_a_lidar.md)):
 
 ```
 estado = [d_0, d_+30, d_-30, d_+60, d_-60, v_norm]
@@ -236,7 +236,7 @@ Pode ser baseado no starter code fornecido em https://github.com/senac-ia/rf-car
 
 ### Salvamento de modelos treinados
 
-Como os tempos de treinamento podem ser longos (30.000 episódios em pistas mais complexas leva vários minutos), você **deve salvar os modelos treinados em disco**, no diretório `/treinamento` na raiz do projeto. Use **`pickle`** da biblioteca padrão do Python (ver Anexo B).
+Como os tempos de treinamento podem ser longos (30.000 episódios em pistas mais complexas leva vários minutos), você **deve salvar os modelos treinados em disco**, no diretório `/treinamento` na raiz do projeto. Use **`pickle`** da biblioteca padrão do Python (ver [`docs/anexo_b_pickle.md`](anexo_b_pickle.md)).
 
 Estrutura esperada na raiz do projeto:
 
@@ -295,266 +295,10 @@ Este trabalho deve seguir:
 
 ---
 
-## Anexo A: O que são sensores tipo LIDAR
+## Anexos
 
-A seção 2 do enunciado se refere a “sensores tipo LIDAR” como representação do estado do carro. Este anexo explica o conceito para quem nunca encontrou o termo.
+Conteúdo de apoio em arquivos separados:
 
-### A.1 LIDAR no mundo real
-
-**LIDAR** é a sigla para **Li**ght **D**etection **a**nd **R**anging — detecção e medição por luz. É um sensor que mede **distâncias** disparando feixes de laser e medindo o tempo que a luz leva para bater num objeto e voltar. A ideia é a mesma do **sonar** (usa som) ou do **radar** (usa ondas de rádio), só que com luz: dispara → reflete → recebe → calcula distância. Como a velocidade da luz é constante e conhecida, **tempo de voo × velocidade da luz / 2** dá a distância até o obstáculo.
-
-**Onde aparece:**
-
-- **Carros autônomos** (Waymo, Cruise): aquele “domo” giratório no teto do carro é um LIDAR.
-- **Robôs aspiradores** (Roomba, Roborock): mapeiam sua casa.
-- **Drones autônomos**: para evitar obstáculos.
-- **iPhones recentes**: têm um mini-LIDAR para realidade aumentada e foco em fotos.
-- **Topografia e arqueologia**: aviões com LIDAR mapeiam relevo abaixo de florestas densas.
-
-A saída típica de um LIDAR é um **vetor de distâncias**, uma para cada direção em que ele aponta:
-
-```
-Direção        Distância
-0°  (frente)   8,2 m
-+30°           5,1 m
--30°           12,5 m
-+60°           2,4 m
--60°           ∞ (não bateu em nada dentro do alcance)
-```
-
-### A.2 LIDAR simulado no EP
-
-No ambiente do EP, o “LIDAR” é **simulado** — não existe luz nem laser de verdade. O que `src/env.py` faz é **ray casting**:
-
-1. A partir da posição do carro $(x, y)$ e seu ângulo $\theta$, emitimos **5 raios** virtuais nas direções $\theta + 0°$, $\theta \pm 30°$, $\theta \pm 60°$.
-2. Para cada raio, andamos passo a passo em pequenos incrementos (`step = 0,1` célula), checando se a célula atual é parede.
-3. Quando bate numa parede ou ultrapassa o alcance máximo (10 células), registramos a distância percorrida.
-4. O **estado do agente** vira um vetor de 6 floats:
-
-```
-[d_frente, d_+30°, d_-30°, d_+60°, d_-60°, velocidade_normalizada]
-```
-
-Esse é o **único input que o agente vê**. Ele não vê o mapa, não sabe onde está, não sabe onde é a chegada — só sabe “o que tem perto na minha frente e nos meus lados”.
-
-> 💡 É exatamente isso que um carro real “vê” pelo LIDAR físico. A diferença é que aqui simulamos via *ray casting* num grid 2D em vez de usar luz física.
-> 
-
-### A.3 Limitações do LIDAR (real e simulado)
-
-Vale conhecer os limites:
-
-- **Vidro e materiais transparentes:** LIDAR real tem dificuldade — o laser atravessa o vidro.
-- **Chuva forte, neve, neblina:** as gotículas refletem o laser e geram leituras falsas.
-- **Apenas um plano:** um LIDAR 2D só vê uma “fatia” horizontal. Em carros reais isso exige LIDAR 3D ou múltiplos sensores em alturas diferentes.
-- **Custo:** um LIDAR automotivo decente custa milhares de dólares. É parte do motivo de a Tesla ter apostado em câmeras + visão computacional em vez de LIDAR.
-
-### A.4 Recursos para aprofundar
-
-- *Wikipedia: LIDAR* — boa visão geral histórica e técnica.
-- *Velodyne, Ouster, Luminar* — fabricantes; sites têm whitepapers acessíveis.
-- *Self-Driving Cars Specialization* (Coursera, Univ. of Toronto) — curso aborda integração LIDAR + percepção em detalhe.
-
----
-
-## Anexo B: Salvando modelos treinados com `pickle`
-
-Como o EP exige salvar os modelos treinados no diretório `/treinamento`, este anexo explica como fazer isso usando `pickle` — uma biblioteca da **biblioteca padrão do Python** (não precisa instalar nada).
-
-### B.1 O que é pickle
-
-`pickle` é o módulo do Python que **serializa** objetos: transforma uma estrutura de dados Python (dicionário, lista, classe, array NumPy) em uma sequência de bytes que pode ser salva em arquivo e, depois, **desserializada** de volta no estado original.
-
-Em uma frase: pickle congela um objeto Python em disco, e descongela quando você quiser.
-
-> 💡 **Analogia:** é como tirar uma “foto” do seu modelo treinado e poder revivê-la depois sem precisar re-treinar tudo.
-> 
-
-### B.2 Uso básico
-
-**Salvar um objeto:**
-
-```python
-import pickle
-
-dados = {"q_table": minha_q_table, "config": {"alpha": 0.1, "gamma": 0.99}}
-
-with open("treinamento/q_learning.pkl", "wb") as f:   # "wb" = write binary
-    pickle.dump(dados, f)
-```
-
-**Carregar um objeto:**
-
-```python
-import pickle
-
-with open("treinamento/q_learning.pkl", "rb") as f:   # "rb" = read binary
-    dados = pickle.load(f)
-
-minha_q_table = dados["q_table"]
-config = dados["config"]
-```
-
-Pronto. Não há mais nada de fundamental.
-
-### B.3 O que salvar para o Q-Learning
-
-Salve um dicionário com tudo que você precisa para reproduzir o agente:
-
-```python
-estado_para_salvar = {
-    "q_table": agent.q_table,           # dict {chave_discreta: array} ou np.ndarray
-    "discretization_K": 5,              # configuração da discretização
-    "n_episodes_trained": 30_000,
-    "rewards_history": rewards,         # lista de recompensas por episódio
-    "config": {"alpha": 0.1, "gamma": 0.99, "eps_start": 1.0, "eps_end": 0.05},
-    "seed": 42,
-    "track_used": "pistas/pista_03.txt",
-}
-with open("treinamento/q_learning_K5_pista_03.pkl", "wb") as f:
-    pickle.dump(estado_para_salvar, f)
-```
-
-### B.4 Lógica recomendada para `solucao.py`
-
-Implemente a seguinte lógica para evitar re-treinar a cada execução:
-
-```python
-import os
-import pickle
-from pathlib import Path
-
-TREINAMENTO_DIR = Path("treinamento")
-TREINAMENTO_DIR.mkdir(exist_ok=True)
-
-def treinar_ou_carregar(nome, treinar_fn, recarregar=False):
-    """
-    Se 'treinamento/{nome}.pkl' existe e recarregar=False, carrega.
-    Caso contrário, chama treinar_fn() e salva o resultado.
-    """
-    arquivo = TREINAMENTO_DIR / f"{nome}.pkl"
-    if arquivo.exists() and not recarregar:
-        print(f"Carregando{arquivo} ...")
-        with open(arquivo, "rb") as f:
-            return pickle.load(f)
-    else:
-        print(f"Treinando{nome} ...")
-        resultado = treinar_fn()
-        with open(arquivo, "wb") as f:
-            pickle.dump(resultado, f)
-        print(f"Salvo em{arquivo}")
-        return resultado
-
-# Uso:
-q_baseline = treinar_ou_carregar("q_learning_K5_pista_03", lambda: treinar_q_learning(env, K=5))
-q_cliff = treinar_ou_carregar("q_learning_K5_pista_07", lambda: treinar_q_learning(env_07, K=5))
-```
-
-Para forçar re-treinamento (útil ao depurar), passe `recarregar=True` ou simplesmente delete o arquivo `.pkl`.
-
-### B.5 Cuidados com pickle
-
-- **Nunca abra um pickle de fonte desconhecida.** O processo de unpickling pode executar código arbitrário — é um vetor clássico de ataque. Para os modelos que você mesmo gerou, sem problema.
-- **Compatibilidade entre versões do Python:** pickles em Python 3.10+ são geralmente intercompatíveis, mas pickles entre Python 2 e 3 quebram. Para este EP isso não é problema (use Python 3.10+).
-- **Tamanho dos arquivos:** tabelas $Q$ tabulares costumam ficar entre dezenas e centenas de KB — sem problema para commitar no GitHub.
-- **Reprodutibilidade:** salve **junto com o modelo** os hiperparâmetros e a seed usada.
-
-### B.6 Documentação oficial
-
-- [docs.python.org/3/library/pickle.html](https://docs.python.org/3/library/pickle.html) — referência completa.
-
----
-
-## Anexo C: A Velocidade do Carro
-
-Velocidade ($v$) parece um conceito óbvio, mas no contexto deste EP tem sutilezas que vale entender bem — porque é justamente o componente do estado que torna o problema interessante (e difícil).
-
-### C.1 Definição operacional
-
-A velocidade $v$ é um **escalar não-negativo** que mede quanto o carro avança por passo de simulação, na direção em que ele está apontando. A cada chamada de `env.step(action)`, o carro se move:
-
-$$
-x_{novo} = x + v \cdot \cos\theta
-$$
-
-$$
-y_{novo} = y + v \cdot \sin\theta
-$$
-
-A direção do movimento vem do ângulo $\theta$. A velocidade é só a **magnitude** do deslocamento.
-
-> 💡 Em física tradicional, velocidade é um vetor (magnitude + direção). Aqui, separamos as duas componentes: $v$ guarda a magnitude, $\theta$ guarda a direção. Isso simplifica a física e o controle.
-> 
-
-### C.2 Unidade e limites
-
-A unidade é **células do grid por passo de simulação**.
-
-- $v = 1{,}0$ → o carro atravessa **uma célula inteira a cada passo**.
-- $v = 0{,}5$ → meia célula por passo.
-- $v = 0$ → parado.
-- $v = V_{\max} = 2{,}0$ → duas células por passo (limite máximo).
-
-Não há unidade de tempo “real” no problema — um “passo” é uma unidade abstrata.
-
-### C.3 Como o agente controla a velocidade
-
-A velocidade muda **apenas por ação do agente**. Não há fricção, não há inércia continuada — se o agente não fizer nada, $v$ permanece igual.
-
-| Ação | Efeito em $v$ |
-| --- | --- |
-| 0 (nada) | $v$ inalterada |
-| 1 (acelerar) | $v \leftarrow \min(v + 0{,}5,\ V_{\max})$ |
-| 2 (frear) | $v \leftarrow \max(v - 0{,}5,\ 0)$ |
-| 3 (virar esquerda) | $v$ inalterada (só $\theta$ muda) |
-| 4 (virar direita) | $v$ inalterada (só $\theta$ muda) |
-
-Isso é uma **física idealizada** — em um carro real, frenagem leva tempo, há fricção do ar, há inércia. No EP, ignoramos tudo isso para simplificar o aprendizado.
-
-### C.4 Sem marcha-ré
-
-Note: $v \in [0,\ V_{\max}]$. **Nunca negativa**. O carro só vai para frente; para mudar de direção, precisa virar. Isso modela um carro de F1, não um carro de rua.
-
-### C.5 Velocidade no estado observável
-
-A velocidade entra na **observação do agente** como o sexto componente do vetor de estado:
-
-```
-estado = [d_0, d_+30, d_-30, d_+60, d_-60, v_norm]
-```
-
-onde $v_{norm} = v / V_{\max}$ — normalizada para $[0, 1]$, igual aos sensores LIDAR. Isso é importante: tabelas com discretização funcionam melhor quando todas as features estão na mesma escala.
-
-> 💡 **Por que o agente precisa saber a própria velocidade?** Porque a melhor ação depende dela. Andando devagar perto de uma curva, é seguro continuar acelerando. Andando rápido, é prudente frear antes. Sem ver a velocidade, o agente não conseguiria distinguir essas situações.
-> 
-
-### C.6 Por que velocidade é o componente sutil do problema
-
-Os 5 sensores LIDAR são “fáceis de entender” — distâncias até paredes. A velocidade é mais traiçoeira por três motivos:
-
-### 1. Tem efeito acumulativo
-
-Acelerar uma vez muda $v$ em apenas $+0{,}5$ — efeito imediato pequeno. Mas o efeito **se mantém** em todos os passos seguintes: o carro vai continuar andando mais rápido até alguém frear. Isso é diferente de virar (efeito imediato no ângulo) e dos sensores (refletem o estado atual).
-
-### 2. Cria dilemas de longo prazo
-
-Acelerar dá recompensa imediata maior (mais $\Delta$progresso por passo). Mas se você acelerar antes de uma curva, vai bater na parede e perder $-100$. O agente precisa aprender que **às vezes é certo desacelerar mesmo perdendo progresso imediato**, antecipando a curva. Esse é o **problema clássico de crédito temporal** (*temporal credit assignment*) que torna RL difícil em geral, e que aparece de forma vívida aqui.
-
-### 3. Interage com o ângulo de virada
-
-A virada é em ângulo absoluto ($\theta \pm 30°$), independente da velocidade. Mas o **raio da curva resultante** depende de $v$:
-
-- Velocidade baixa + virada de 30° = curva apertada, raio pequeno.
-- Velocidade alta + virada de 30° = curva larga, raio grande.
-
-O agente precisa **coordenar** velocidade e virada para fazer curvas que caibam no corredor da pista. Se acelerar muito antes de uma curva, mesmo virando o carro vai sair pela tangente e bater.
-
-### C.7 Implicações práticas para o seu agente
-
-1. **Não basta aprender a virar — precisa aprender a desacelerar antes de curvas.** Essa é a habilidade mais difícil que o agente vai dominar, e geralmente é a última a emergir no treinamento.
-2. **Curvas de aprendizado “boas mas não ótimas”** geralmente refletem que o agente aprendeu a chegar ao fim mas não otimizou velocidade. Anda devagar o tempo todo (seguro), nunca atinge $V_{\max}$. Política funcional, mas conservadora.
-3. **Para depurar visualmente:** rode `renderizar_episodio` no `src/visualize.py` para ver o carro correndo a pista no seu terminal.
-    - Se o carro **anda na velocidade máxima sempre e bate**: o problema é aprender a frear.
-    - Se o carro **anda devagar sempre e nunca bate mas demora muito**: o problema é aprender a acelerar nas retas.
-    - Se o carro **acelera nas retas e freia antes das curvas**: parabéns, está bem treinado.
-4. **No relatório:** vale comparar a **velocidade média** atingida pelo agente em cada pista. É um indicador de quão “agressiva” é a política aprendida — em pistas com risco (T4.2), você deve observar uma política mais conservadora, que privilegia segurança sobre velocidade.
+- [`docs/anexo_a_lidar.md`](anexo_a_lidar.md) — o que são sensores tipo LIDAR (real e simulado).
+- [`docs/anexo_b_pickle.md`](anexo_b_pickle.md) — como salvar e carregar modelos treinados com `pickle`.
+- [`docs/anexo_c_velocidade.md`](anexo_c_velocidade.md) — discussão detalhada sobre a velocidade do carro.

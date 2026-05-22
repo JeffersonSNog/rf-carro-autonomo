@@ -308,7 +308,7 @@ Use estes valores como ponto de partida (são os da T4.1 e T4.2):
 3. **Visualize a política treinada** com `renderizar_episodio` em `src/visualize.py`. Ver o carro em ação revela bugs que números não revelam.
 4. **Se a curva fica plana em $-100$:** o agente sempre colide. Aumente $\varepsilon$ inicial, aumente o número de episódios, ou comece em pista mais simples.
 5. **Se a curva sobe mas a política avaliada bate na parede:** provavelmente bug na avaliação — confira que está usando $\varepsilon = 0$ (gulosa) e a mesma função de discretização do treinamento.
-6. **Salve o modelo** via `pickle` ao final do treinamento (ver Anexo B do enunciado). Treinar 30.000 episódios pode levar vários minutos.
+6. **Salve o modelo** via `pickle` ao final do treinamento (ver [`anexo_b_pickle.md`](anexo_b_pickle.md)). Treinar 30.000 episódios pode levar vários minutos.
 7. **Use seed fixa** (`SEED = 42`) para reprodutibilidade.
 
 ---

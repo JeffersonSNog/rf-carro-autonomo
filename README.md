@@ -125,7 +125,7 @@ while not done:
 
 O estado é um vetor de 6 floats normalizados em [0, 1] (5 sensores LIDAR + velocidade). Para o **Q-Learning tabular**, você precisa **discretizar** esse vetor antes de usar como chave da tabela. O enunciado fixa $K = 5$ baldes por dimensão; o §2.1 explica por que essa escolha funciona bem para este problema.
 
-> 💡 **Velocidade é o componente sutil.** Os 5 sensores LIDAR refletem o estado atual; já a velocidade tem efeito acumulativo (acelerar agora afeta todos os passos seguintes) e cria o clássico problema de *temporal credit assignment* — o agente precisa aprender a frear ANTES de uma curva, sacrificando recompensa imediata. Leia o **Anexo C** (`docs/enunciado.md`) para a discussão completa.
+> 💡 **Velocidade é o componente sutil.** Os 5 sensores LIDAR refletem o estado atual; já a velocidade tem efeito acumulativo (acelerar agora afeta todos os passos seguintes) e cria o clássico problema de *temporal credit assignment* — o agente precisa aprender a frear ANTES de uma curva, sacrificando recompensa imediata. Leia [`docs/anexo_c_velocidade.md`](docs/anexo_c_velocidade.md) para a discussão completa.
 
 ### 2. Reward shaping já está implementado
 
@@ -217,7 +217,7 @@ treinamento/
 
 Cada `.pkl` deve guardar pelo menos: tabela Q, $K$ usado, nº de episódios, hiperparâmetros, seed, pista usada e histórico de recompensas (em janela móvel de 100). Esses arquivos devem ser commitados no repositório — assim o professor reproduz as avaliações sem re-treinar.
 
-Detalhes no **Anexo B do enunciado** (`docs/enunciado.md`).
+Detalhes em [`docs/anexo_b_pickle.md`](docs/anexo_b_pickle.md).
 
 ## Modificando o ambiente
 

@@ -34,7 +34,7 @@ SEED = 42
 random.seed(SEED)
 np.random.seed(SEED)
 
-# Diretório onde os modelos treinados serão salvos via pickle (ver Anexo B do enunciado)
+# Diretório onde os modelos treinados serão salvos via pickle (ver docs/anexo_b_pickle.md)
 DIR_TREINAMENTO = Path("treinamento")
 DIR_TREINAMENTO.mkdir(exist_ok=True)
 
@@ -125,7 +125,7 @@ def avaliar(env, agente, n_episodios=10):
 
 
 # ============================================================================
-# SALVAR / CARREGAR MODELO (ver Anexo B do enunciado)
+# SALVAR / CARREGAR MODELO (ver docs/anexo_b_pickle.md)
 # ============================================================================
 
 def treinar_ou_carregar(nome, fn_treinar, recarregar=False):
