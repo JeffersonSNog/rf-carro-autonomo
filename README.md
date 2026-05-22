@@ -4,8 +4,6 @@ Neste exercício-programa, o agente é um carrinho que precisa aprender a **pilo
 
 A continuidade com o EP anterior (busca informada com A*) é proposital: lá, o agente conhecia o ambiente e planejava a rota; aqui, o ambiente é desconhecido e o agente precisa aprender por interação. Mesmo domínio (grid 2D), formato similar de I/O, mas paradigma fundamentalmente diferente.
 
-Código-fonte base: https://github.com/senac-ia/rf-carro-autonomo
-
 > 📋 **Entrega, grupo (até 3 pessoas), critérios de avaliação e política de uso de IA:** ver [`docs/avaliacao.md`](docs/avaliacao.md).
 
 ---
@@ -32,8 +30,8 @@ Exemplo de pista (formato `entrada.txt`):
 
 O EP fornece **18 pistas** (`pista_01.txt` a `pista_18.txt`) em três níveis de dificuldade (ver [`descricao_pistas.md`](descricao_pistas.md) para o design detalhado):
 
-- **01–04 (fáceis):** progressão pedagógica — cada pista introduz uma habilidade nova (reagir a parede frontal, generalizar curvas, ajuste fino de ângulo, U-turn com chicane). Corredor 3–4 células. Boas para depurar e para o baseline da T4.1.
-- **05–12 (médias):** combinam vários elementos (chicanes, curvas em sequência, mudanças de direção). Corredor 3–4 células. A `pista_07.txt` é a usada na T4.2 (Cliff-style).
+- **01–04 (fáceis):** progressão pedagógica — cada pista introduz uma habilidade nova (reagir a parede frontal, generalizar curvas, ajuste fino de ângulo, U-turn com chicane). Corredor 3–4 células. Boas para depurar.
+- **05–12 (médias):** combinam vários elementos (chicanes, curvas em sequência, mudanças de direção). Corredor 3–4 células.
 - **13–18 (difíceis):** corredor pode chegar a 2 células, com várias mudanças de direção. Para experimentos opcionais ou para discussão de limites do tabular no relatório.
 
 Você pode também criar pistas adicionais para exploração.
@@ -129,38 +127,28 @@ O resultado é uma tupla de 6 inteiros em $\{0, 1, 2, 3, 4\}$, que serve como ch
 
 > Discretizações mais finas (ex.: $K = 8$ ou $K = 10$) explodem o número de estados ($8^6 \approx 262$ mil; $10^6 = 1$ milhão) e tornam o aprendizado muito mais lento sem ganho prático aqui, porque a velocidade só tem 5 níveis e o LIDAR já é amostrado em passos de $0{,}1$ célula no *ray casting*. Discretizações mais grosseiras ($K = 3$) agregam demais — o agente não consegue separar “perto da parede” de “colado na parede” e colide com frequência.
 >
-> Por essas razões, neste EP **$K = 5$ é fixo** e o foco do trabalho está no **Q-Learning** e no seu comportamento em pistas de dificuldade crescente (Tarefas 3.1 e 3.2).
+> Por essas razões, neste EP **$K = 5$ é fixo** e o foco do trabalho está em implementar o **Q-Learning** e analisar seu comportamento na pista do baseline.
 
 ---
 
-## 3. Tarefas
+## 3. Tarefa
 
 Antes de começar, leia [`docs/qlearning.md`](docs/qlearning.md) — explica a matemática do Q-Learning (atualização TD, $\varepsilon$-greedy, por que é off-policy), traz o pseudocódigo e dicas de implementação em Python com a estrutura de dados sugerida para a tabela $Q$.
 
-### 3.1 Q-Learning Baseline (T4.1)
+### 3.1 Q-Learning Baseline
 
 Implemente Q-Learning com $\varepsilon$-greedy. Treine na pista `pista_03.txt` (curva moderada).
 
 Ao final, **avalie a política aprendida** com $\varepsilon = 0$ (gulosa) e gere `q_learning.txt`.
 
-### 3.2 Q-Learning em pista com risco — Cliff-style (T4.2)
+Analise e reporte no relatório:
 
-Essa tarefa é o coração pedagógico do EP — investiga como o Q-Learning se comporta em uma pista onde **errar custa caro**, evocando a essência do experimento *Cliff Walking* do Sutton & Barto.
-
-Use a pista `pista_07.txt` (curva apertada — alto risco de colisão durante exploração).
-
-Treine o Q-Learning com a **mesma configuração** da T4.1 ($\alpha=0{,}1$, $\gamma=0{,}99$, $\varepsilon$ decaindo de 1,0 a 0,05 em 80% de 30.000 episódios, $K=5$).
-
-Analise e reporte:
-
-- **Histórico de aprendizado** (recompensa média por episódio em janela móvel de 100, salvo no pickle e reportado no relatório como tabela com marcos ou ASCII). Compare com o histórico da T4.1 — a curva é mais ruidosa? Demora mais para estabilizar?
-- **Recompensa média durante o treinamento** (com $\varepsilon$-greedy ativo) vs. **recompensa final em avaliação gulosa** ($\varepsilon = 0$). A diferença é maior do que na T4.1? Por quê?
-- **Velocidade média** da política aprendida. O agente fica mais conservador (devagar) ou mais agressivo do que na T4.1?
+- **Histórico de aprendizado** (recompensa média por episódio em janela móvel de 100, salvo no pickle e reportado no relatório como tabela com marcos ou ASCII).
+- **Recompensa média durante o treinamento** (com $\varepsilon$-greedy ativo) vs. **recompensa final em avaliação gulosa** ($\varepsilon = 0$).
+- **Velocidade média** da política aprendida.
 - **Trajetória visual** — use a animação no terminal (`renderizar_episodio` em `src/visualize.py`) para inspecionar a política final. O agente passa colado nas paredes ou mantém folga? Descreva o que observou (capturar o terminal em texto ou descrever em prosa basta).
 
-Gere `cliff.txt` com o resumo da política treinada. Discuta no relatório como o **trade-off entre exploração e explotação** muda quando colidir tem custo alto, e como isso aparece no comportamento aprendido (velocidade, distância das paredes, taxa de colisão durante o treinamento).
-
-### 3.3 Hiperparâmetros sugeridos
+### 3.2 Hiperparâmetros sugeridos
 
 | Hiperparâmetro | Valor |
 |---|---|
@@ -173,12 +161,9 @@ Gere `cliff.txt` com o resumo da política treinada. Discuta no relatório como 
 
 Use estes valores como ponto de partida. $K = 5$ é fixo (ver §2.2); justifique no relatório qualquer desvio nos demais hiperparâmetros.
 
-### 3.4 Formato dos arquivos de saída
+### 3.3 Formato do arquivo de saída
 
-Cada tarefa gera um `.txt` na raiz do projeto:
-
-- **`q_learning.txt`:** resultado da T4.1 em `pista_03.txt`.
-- **`cliff.txt`:** resultado da T4.2 em `pista_07.txt`.
+O programa gera `q_learning.txt` na raiz do projeto, com o desempenho da política treinada em `pista_03.txt`.
 
 Template:
 
@@ -199,21 +184,17 @@ Sucesso: SIM
 
 ## 4. Relatório
 
-O relatório (no `README.md` do seu repositório) deve cobrir duas seções:
+O relatório (no `README.md` do seu repositório) deve cobrir:
 
-### 4.1 Modelagem do MDP e Q-Learning Baseline (T4.1)
+### Modelagem do MDP e Q-Learning Baseline
 
 - **Espaço de estados (após discretização $K = 5$):** quantos estados, em teoria? E na prática (após o treinamento)?
 - **Espaço de ações:** justifique se 5 ações são suficientes.
 - **Função de recompensa:** explique como você implementou o reward shaping.
 - **Como você está armazenando $Q[s,a]$ internamente** (dicionário, array NumPy multidimensional)?
 - **Resultado do baseline:** quantos passos o Q-Learning leva para completar a pista? Velocidade média atingida? Perfil de uso de cada ação?
-
-### 4.2 Q-Learning em pista de risco — Cliff-style (T4.2)
-
-- Como o desempenho do Q-Learning muda em uma pista com alto risco de colisão? Compare curva de aprendizado, recompensa final e velocidade média com os resultados da T4.1.
-- A diferença entre a recompensa durante o treinamento (com $\varepsilon$-greedy) e a recompensa em avaliação gulosa ($\varepsilon = 0$) é maior aqui? Como isso reflete o efeito de **explorar perto de paredes**?
-- Discuta com base nas trajetórias observadas via animação no terminal (`renderizar_episodio` em `src/visualize.py`) — o agente passa colado nas paredes ou mantém folga? Como isso se relaciona com o comportamento off-policy do Q-Learning (que aprende a política gulosa enquanto explora aleatoriamente)?
+- **Curva de aprendizado:** evolução da recompensa média por episódio em janela móvel de 100.
+- **Inspeção qualitativa via animação no terminal** (`renderizar_episodio` em `src/visualize.py`): o agente passa colado nas paredes ou mantém folga? Como isso se relaciona com o comportamento off-policy do Q-Learning?
 
 ---
 
@@ -291,7 +272,7 @@ while not done:
 
 ### 5.5 Esqueleto da implementação
 
-Veja `solucao.py` — placeholder de `AgenteQLearning` e função `main()` que orquestra a I/O esperada (`q_learning.txt`, `cliff.txt`).
+Veja `solucao.py` — placeholder de `AgenteQLearning` e função `main()` que orquestra a I/O esperada (`q_learning.txt`).
 
 ### 5.6 Visualização
 
@@ -318,11 +299,10 @@ Estrutura esperada:
 
 ```
 treinamento/
-├── q_learning_K5_pista_03.pkl   ← T4.1 baseline
-└── q_learning_K5_pista_07.pkl   ← T4.2 Cliff-style
+└── q_learning_K5_pista_03.pkl
 ```
 
-Cada `.pkl` deve guardar pelo menos: tabela Q, $K$ usado, nº de episódios, hiperparâmetros, seed, pista usada e histórico de recompensas (em janela móvel de 100). Esses arquivos devem ser commitados no repositório — assim o professor reproduz as avaliações sem re-treinar.
+O `.pkl` deve guardar pelo menos: tabela Q, $K$ usado, nº de episódios, hiperparâmetros, seed, pista usada e histórico de recompensas (em janela móvel de 100). Esse arquivo deve ser commitado no repositório — assim o professor reproduz a avaliação sem re-treinar.
 
 Detalhes em [`docs/anexo_b_pickle.md`](docs/anexo_b_pickle.md).
 
@@ -344,8 +324,7 @@ Mudar esses valores muda o problema. Justifique no relatório.
 Para você ter referência sobre o que esperar:
 
 - **Pistas 01–04 (fáceis):** Q-Learning tabular converge rápido (poucos milhares de episódios).
-- **Pista 03 (curva suave):** o baseline da T4.1 — pode precisar 20.000–30.000 episódios com $K=5$ para uma boa política.
-- **Pista 07 (curva apertada):** a usada na T4.2 (Cliff-style) — alto risco de colisão durante exploração.
+- **Pista 03 (curva suave):** o baseline — pode precisar 20.000–30.000 episódios com $K=5$ para uma boa política.
 - **Pistas 05–12 (médias):** combinam mais elementos, exigem políticas mais sofisticadas.
 - **Pistas 13–18 (difíceis):** corredor mínimo de 2 células com várias mudanças de direção — podem ser muito difíceis ou impossíveis para tabular. Use para discussão crítica no relatório.
 

@@ -33,11 +33,10 @@ seu-projeto/
 ├── src/
 ├── pistas/
 └── treinamento/
-    ├── q_learning_K5_pista_03.pkl  ← baseline Q-Learning (T4.1)
-    └── q_learning_K5_pista_07.pkl  ← Q-Learning em pista de risco (T4.2)
+    └── q_learning_K5_pista_03.pkl  ← Q-Learning treinado em pista_03
 ```
 
-Esses arquivos devem ser **commitados no repositório**. Isso permite ao professor reproduzir as avaliações sem re-treinar.
+Esse arquivo deve ser **commitado no repositório**. Isso permite ao professor reproduzir a avaliação sem re-treinar.
 
 ## O que será avaliado
 
@@ -57,7 +56,7 @@ Esses arquivos devem ser **commitados no repositório**. Isso permite ao profess
 - **Implementação do Q-Learning** do zero.
 - **Função de discretização** com $K = 5$.
 - **Loop de treinamento** que registra histórico de recompensas por episódio (salvo no pickle do modelo).
-- **Loop de avaliação** com $\varepsilon = 0$ que gera os arquivos de saída (`q_learning.txt`, `cliff.txt`).
+- **Loop de avaliação** com $\varepsilon = 0$ que gera o arquivo de saída `q_learning.txt`.
 - **Inspeção da política final** via animação no terminal (`renderizar_episodio` em `src/visualize.py`) — descreva no relatório o que observou para a política treinada em cada pista.
 - **Salvamento e carregamento** dos modelos via pickle no diretório `/treinamento`.
 
@@ -67,7 +66,7 @@ Esses arquivos devem ser **commitados no repositório**. Isso permite ao profess
 - Explicação da discretização adotada (por que $K = 5$ funciona bem aqui).
 - Explicação das funções principais e estrutura do código.
 - Demonstração dos resultados (histórico de aprendizado em formato textual, animação do agente no terminal, tabelas de avaliação).
-- **Análise crítica** — especialmente do comportamento do Q-Learning na pista Cliff-style (efeito do risco sobre exploração e política aprendida).
+- **Análise crítica** do comportamento do Q-Learning na pista (curva de aprendizado, política aprendida, trajetória observada).
 - Criatividade — extensões além do mínimo, exploração de variações na função de recompensa ou em outras pistas.
 
 ## Política de uso de ferramentas

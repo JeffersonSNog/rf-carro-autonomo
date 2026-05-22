@@ -87,7 +87,6 @@ def treinar_ou_carregar(nome, treinar_fn, recarregar=False):
 
 # Uso:
 q_baseline = treinar_ou_carregar("q_learning_K5_pista_03", lambda: treinar_q_learning(env, K=5))
-q_cliff = treinar_ou_carregar("q_learning_K5_pista_07", lambda: treinar_q_learning(env_07, K=5))
 ```
 
 Para forçar re-treinamento (útil ao depurar), passe `recarregar=True` ou simplesmente delete o arquivo `.pkl`.

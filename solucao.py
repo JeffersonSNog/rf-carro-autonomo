@@ -5,7 +5,7 @@ Você deve implementar:
     - AgenteQLearning  (tabular)
 
 E preencher main() para orquestrar treinamento, avaliação e geração dos arquivos
-de saída descritos no README (q_learning.txt para T4.1 e cliff.txt para T4.2).
+de saída descritos no README (q_learning.txt).
 
 Uso:
     python solucao.py pistas/pista_03.txt
@@ -153,7 +153,7 @@ def treinar_ou_carregar(nome, fn_treinar, recarregar=False):
 
 def escrever_saida(caminho, nome_algoritmo, env, resultado_avaliacao, n_episodios_treinados, K):
     """
-    Escreve um arquivo no formato esperado pelo README (§3.4):
+    Escreve um arquivo no formato esperado pelo README (§3.3):
 
     === Pista: <nome> ===
     Algoritmo: <nome>
@@ -164,7 +164,7 @@ def escrever_saida(caminho, nome_algoritmo, env, resultado_avaliacao, n_episodio
     Recompensa total: R
     Sucesso: SIM/NAO
     """
-    # TODO: implementar conforme formato do README §3.4
+    # TODO: implementar conforme formato do README §3.3
     raise NotImplementedError
 
 
@@ -192,10 +192,6 @@ def main():
     # resultado = avaliar(env, agente)
     # escrever_saida("q_learning.txt", "Q-Learning", env, resultado,
     #                args.episodios, args.K)
-
-    # ─── Outras tarefas ────────────────────────────────────────────────────
-    # T4.2 (Cliff-style): retreine o Q-Learning em pista_07.txt com a mesma
-    # configuração e gere cliff.txt. Veja README §3.2 para detalhes.
 
     print("\nPronto.")
 

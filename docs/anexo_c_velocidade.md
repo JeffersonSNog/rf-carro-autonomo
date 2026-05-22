@@ -88,4 +88,4 @@ O agente precisa **coordenar** velocidade e virada para fazer curvas que caibam 
     - Se o carro **anda na velocidade máxima sempre e bate**: o problema é aprender a frear.
     - Se o carro **anda devagar sempre e nunca bate mas demora muito**: o problema é aprender a acelerar nas retas.
     - Se o carro **acelera nas retas e freia antes das curvas**: parabéns, está bem treinado.
-4. **No relatório:** vale comparar a **velocidade média** atingida pelo agente em cada pista. É um indicador de quão “agressiva” é a política aprendida — em pistas com risco (T4.2), você deve observar uma política mais conservadora, que privilegia segurança sobre velocidade.
+4. **No relatório:** vale reportar a **velocidade média** atingida pela política treinada. É um indicador de quão “agressiva” é a política aprendida — uma política conservadora privilegia segurança sobre velocidade; uma agressiva persegue $V_{\max}$ a maior parte do tempo.

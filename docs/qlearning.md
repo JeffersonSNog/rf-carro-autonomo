@@ -281,11 +281,11 @@ def avaliar(env, Q, K=5, n_episodios=10):
 
 ## 5. Hiperparâmetros sugeridos
 
-Use estes valores como ponto de partida (são os da T4.1 e T4.2):
+Use estes valores como ponto de partida:
 
 | Hiperparâmetro | Valor | Justificativa |
 |---|---|---|
-| **Episódios de treinamento** | 30.000 | Suficiente para convergência em pistas 03 e 07 com $K=5$. |
+| **Episódios de treinamento** | 30.000 | Suficiente para convergência em `pista_03.txt` com $K=5$. |
 | **Limite de passos por episódio** | 500 | Evita episódios infinitos quando o agente fica girando em círculos. |
 | **Discretização $K$** | 5 | Fixo no EP — ver §2.2 do `README.md` para a justificativa (casa com os 5 níveis de velocidade). |
 | **Taxa de aprendizado $\alpha$** | 0,1 | Padrão de Sutton & Barto. Suficientemente pequeno para não oscilar, grande o bastante para aprender rápido. |
