@@ -555,6 +555,6 @@ A calibração final dos hiperparâmetros é parte do EP — você vai precisar 
 
 ```bash
 pip install -r requirements.txt
-python solucao.py               # treina + avalia
-python solucao.py --recarregar  # força re-treino
+python solucao.py               
+python solucao.py --recarregar  
 ```
